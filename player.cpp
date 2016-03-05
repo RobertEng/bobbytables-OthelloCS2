@@ -1,3 +1,8 @@
+/*******************************************************************************
+ * Andrew Kang and Robert Eng
+ * Othello CS2 Final Project
+ *******/
+
 #include "player.h"
 
 /*
