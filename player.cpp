@@ -23,8 +23,34 @@ Player::Player(Side side) {
 Player::~Player() {
 }
 
+int heuristic[8][8] = 
+    {
+        { 3, -2, 2, 2, 2, 2, -2,  3},
+        {-2, -3, 1, 1, 1, 1, -3, -2},
+        { 2,  1, 1, 1, 1, 1,  1,  2},
+        { 2,  1, 1, 1, 1, 1,  1,  2},
+        { 2,  1, 1, 1, 1, 1,  1,  2},
+        { 2,  1, 1, 1, 1, 1,  1,  2},
+        {-2, -3, 1, 1, 1, 1, -3, -2},
+        { 3, -2, 2, 2, 2, 2, -2,  3}        
+    };
+
 int Player::moveScore(Move *toMove) {
-    
+    Board *tempBoard = board.copy();
+    *tempBoard.doMove(toMove, self);
+
+    int boardScore = 0;
+
+    for(int x = 0; x < 8; x++) {
+        for(int y = 0; y < 8; y++) {
+            if(tempBoard.occupied(x, y) == self) {
+                boardScore += 
+            }
+            else if(tempBoard.occupied(x, y) !=)
+        }
+    }
+
+    delete tempBoard;
 }
 
 /*
