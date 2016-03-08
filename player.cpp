@@ -5,9 +5,6 @@
 
 #include "player.h"
 
-#include <iostream>
-using namespace std;
-
 /*
  * Constructor for the player; initialize everything here. The side your AI is
  * on (BLACK or WHITE) is passed in as "side". The constructor must finish 
@@ -26,6 +23,10 @@ Player::Player(Side side) {
 Player::~Player() {
 }
 
+int Player::moveScore(Move *toMove) {
+    
+}
+
 /*
  * Compute the next move given the opponent's last move. Your AI is
  * expected to keep track of the board on its own. If this is the first move,
@@ -41,6 +42,9 @@ Player::~Player() {
 Move *Player::doMove(Move *opponentsMove, int msLeft) {
     // Do opponents move to update our local version
     board.doMove(opponentsMove, (Side) !self);
+
+    Move *bestMove;
+    int bestScore;
 
     // Loop through all available spaces and check if there is a move.
     // If there is a valid move, do it immediately bc we're making a stupid AI
