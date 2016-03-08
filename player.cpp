@@ -55,17 +55,43 @@ int Player::moveScore(Move *toMove) {
     return boardScore;
 }
 
-int Player::minimaxScore(Move *toMove) {
-    Board *tempBoard = board.copy();
-    tempBoard->doMove(toMove, self);
+int Player::minimaxScore(Board *tempBoard, int curLayer) {
+    if (curLayer == 0) {
+        int boardScore = 0;
 
-    int boardScore = 0;
+        for(int x = 0; x < 8; x++) {
+            for(int y = 0; y < 8; y++) {
+                // Add AI cells, subtract opponent cells
+                boardScore += tempBoard->get(self, x, y)
+                              - tempBoard->get((Side) !self, x, y);
+            }
+        }
+    } else {
+        Move *bestMove = NULL;
+        // Initialize to unachievably bad score
+        int bestScore = -1000;
 
-    for(int x = 0; x < 8; x++) {
-        for(int y = 0; y < 8; y++) {
-            // Add AI cells, subtract opponent cells
-            boardScore += tempBoard->get(self, x, y)
-                          - tempBoard->get((Side) !self, x, y);
+        for(int x = 0; x < 8; x++) {
+            for(int y = 0; y < 8; y++) {
+                Move *m = new Move(x, y);
+
+                Board *tempTempBoard = tempBoard.copy();
+
+                if(board.checkMove(m, self)) {
+                    tempTempBoard->doMove(m, self);
+                    int curScore = moveScore(m);
+
+                    if (curScore > bestScore) {
+                        delete bestMove;
+                        bestMove = m;
+                        bestScore = curScore;
+                    } else {
+                        delete m;
+                    }
+                } else {
+                    delete m;
+                }
+            }
         }
     }
 
@@ -93,27 +119,42 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     // Initialize to unachievably bad score
     int bestScore = -1000;
 
-    // Loop through all available spaces and check if there is a move.
-    // If there is a valid move, do it immediately bc we're making a stupid AI
-    for(int x = 0; x < 8; x++) {
-        for(int y = 0; y < 8; y++) {
-            Move *m = new Move(x, y);
+    // This section is used if we are dealing with a simple heuristic method
+    // without minimax.
 
-            if(board.checkMove(m, self)) {
-                int curScore = moveScore(m);
+    // // Loop through all available spaces and check if there is a move.
+    // // If there is a valid move, do it immediately bc we're making a stupid AI
+    // for(int x = 0; x < 8; x++) {
+    //     for(int y = 0; y < 8; y++) {
+    //         Move *m = new Move(x, y);
 
-                if (curScore > bestScore) {
-                    delete bestMove;
-                    bestMove = m;
-                    bestScore = curScore;
-                } else {
-                    delete m;
-                }
-            } else {
-                delete m;
-            }
-        }
+    //         if(board.checkMove(m, self)) {
+
+    //             // int curScore = moveScore(m);
+
+
+    //             if (curScore > bestScore) {
+    //                 delete bestMove;
+    //                 bestMove = m;
+    //                 bestScore = curScore;
+    //             } else {
+    //                 delete m;
+    //             }
+    //         } else {
+    //             delete m;
+    //         }
+    //     }
+    // }
+
+    // Begin minimax section
+    Board *tempBoard = board.copy();
+
+    if(testingMinimax) {
+        Move *bestMove = minimax(tempBoard, 1);
+    } else {
+        Move *bestMove = minimax(tempBoard, 3);
     }
+    // End minimax section
 
     board.doMove(bestMove, self);
     return bestMove;
