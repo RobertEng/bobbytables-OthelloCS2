@@ -5,6 +5,9 @@
 
 #include "player.h"
 
+#include <iostream>
+using namespace std;
+
 /*
  * Constructor for the player; initialize everything here. The side your AI is
  * on (BLACK or WHITE) is passed in as "side". The constructor must finish 
@@ -14,11 +17,7 @@ Player::Player(Side side) {
     // Will be set to true in test_minimax.cpp.
     testingMinimax = false;
 
-    /* 
-     * TODO: Do any initialization you need to do here (setting up the board,
-     * precalculating things, etc.) However, remember that you will only have
-     * 30 seconds.
-     */
+    self = side;
 }
 
 /*
@@ -40,9 +39,23 @@ Player::~Player() {
  * return NULL.
  */
 Move *Player::doMove(Move *opponentsMove, int msLeft) {
-    /* 
-     * TODO: Implement how moves your AI should play here. You should first
-     * process the opponent's opponents move before calculating your own move
-     */ 
+    // Do opponents move to update our local version
+    board.doMove(opponentsMove, (Side) !self);
+
+    // Loop through all available spaces and check if there is a move.
+    // If there is a valid move, do it immediately bc we're making a stupid AI
+    for(int x = 0; x < 8; x++) {
+        for(int y = 0; y < 8; y++) {
+            Move *m = new Move(x, y);
+
+            if(board.checkMove(m, self)) {
+                board.doMove(m, self);
+                return m;
+            }
+
+            delete m;
+        }
+    }
+
     return NULL;
 }

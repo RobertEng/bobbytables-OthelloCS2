@@ -29,11 +29,11 @@ Board *Board::copy() {
 }
 
 bool Board::occupied(int x, int y) {
-    return taken[x + 8*y];
+    return taken[x + 8 * y];
 }
 
 bool Board::get(Side side, int x, int y) {
-    return occupied(x, y) && (black[x + 8*y] == (side == BLACK));
+    return occupied(x, y) && (black[x + 8 * y] == (side == BLACK));
 }
 
 void Board::set(Side side, int x, int y) {
