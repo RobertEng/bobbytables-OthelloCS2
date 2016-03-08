@@ -4,7 +4,8 @@
  ******************************/
 
 #include "player.h"
-
+#include <iostream>
+using namespace std;
 /*
  * Constructor for the player; initialize everything here. The side your AI is
  * on (BLACK or WHITE) is passed in as "side". The constructor must finish 
@@ -37,20 +38,21 @@ int heuristic[8][8] =
 
 int Player::moveScore(Move *toMove) {
     Board *tempBoard = board.copy();
-    *tempBoard.doMove(toMove, self);
+    tempBoard->doMove(toMove, self);
 
     int boardScore = 0;
 
     for(int x = 0; x < 8; x++) {
         for(int y = 0; y < 8; y++) {
-            if(tempBoard.occupied(x, y) == self) {
-                boardScore += 
-            }
-            else if(tempBoard.occupied(x, y) !=)
+            // Add score of AI cells
+            boardScore += tempBoard->get(self, x, y) * heuristic[y][x];
+            // Subtract scores of opponent cells
+            boardScore -= tempBoard->get((Side) !self, x, y) * heuristic[y][x];
         }
     }
 
     delete tempBoard;
+    return boardScore;
 }
 
 /*
@@ -69,8 +71,9 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     // Do opponents move to update our local version
     board.doMove(opponentsMove, (Side) !self);
 
-    Move *bestMove;
-    int bestScore;
+    Move *bestMove = NULL;
+    // Initialize to unachievably bad score
+    int bestScore = -1000;
 
     // Loop through all available spaces and check if there is a move.
     // If there is a valid move, do it immediately bc we're making a stupid AI
@@ -79,13 +82,21 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
             Move *m = new Move(x, y);
 
             if(board.checkMove(m, self)) {
-                board.doMove(m, self);
-                return m;
-            }
+                int curScore = moveScore(m);
 
-            delete m;
+                if (curScore > bestScore) {
+                    delete bestMove;
+                    bestMove = m;
+                    bestScore = curScore;
+                } else {
+                    delete m;
+                }
+            } else {
+                delete m;
+            }
         }
     }
 
-    return NULL;
+    board.doMove(bestMove, self);
+    return bestMove;
 }

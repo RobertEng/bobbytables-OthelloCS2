@@ -12,7 +12,7 @@ public:
     Player(Side side);
     ~Player();
 
-    int Player::moveScore(Move *toMove);    
+    int moveScore(Move *toMove);    
     Move *doMove(Move *opponentsMove, int msLeft);
 
     // Flag to tell if the player is running within the test_minimax context
