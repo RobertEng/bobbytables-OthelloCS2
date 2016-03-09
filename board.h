@@ -20,6 +20,7 @@ public:
     ~Board();
     Board *copy();
         
+    bool get(Side side, int x, int y);
     bool isDone();
     bool hasMoves(Side side);
     bool checkMove(Move *m, Side side);
@@ -30,7 +31,6 @@ public:
 
     void setBoard(char data[]);
     
-    bool get(Side side, int x, int y);
 };
 
 #endif

@@ -4,8 +4,10 @@
  ******************************/
 
 #include "player.h"
+#define BAD_SCORE -1000
 #include <iostream>
 using namespace std;
+
 /*
  * Constructor for the player; initialize everything here. The side your AI is
  * on (BLACK or WHITE) is passed in as "side". The constructor must finish 
@@ -14,8 +16,16 @@ using namespace std;
 Player::Player(Side side) {
     // Will be set to true in test_minimax.cpp.
     testingMinimax = false;
-
     self = side;
+}
+
+/*
+ * Constructor for the player with a given board.
+ */
+Player::Player(Side side, Board givenBoard) {
+    testingMinimax = false;
+    self = side;
+    board = givenBoard;
 }
 
 /*
@@ -24,79 +34,190 @@ Player::Player(Side side) {
 Player::~Player() {
 }
 
-// int heuristic[8][8] = 
-//     {
-//         { 3, -2, 2, 2, 2, 2, -2,  3},
-//         {-2, -3, 1, 1, 1, 1, -3, -2},
-//         { 2,  1, 1, 1, 1, 1,  1,  2},
-//         { 2,  1, 1, 1, 1, 1,  1,  2},
-//         { 2,  1, 1, 1, 1, 1,  1,  2},
-//         { 2,  1, 1, 1, 1, 1,  1,  2},
-//         {-2, -3, 1, 1, 1, 1, -3, -2},
-//         { 3, -2, 2, 2, 2, 2, -2,  3}        
-//     };
+// Array that indicates heuristic scoring of each cell.
+int heuristic[8][8] = 
+    {
+        { 3, -2, 2, 2, 2, 2, -2,  3},
+        {-2, -3, 1, 1, 1, 1, -3, -2},
+        { 2,  1, 1, 1, 1, 1,  1,  2},
+        { 2,  1, 1, 1, 1, 1,  1,  2},
+        { 2,  1, 1, 1, 1, 1,  1,  2},
+        { 2,  1, 1, 1, 1, 1,  1,  2},
+        {-2, -3, 1, 1, 1, 1, -3, -2},
+        { 3, -2, 2, 2, 2, 2, -2,  3}        
+    };
 
-int Player::moveScore(Move *toMove) {
-    Board *tempBoard = board.copy();
-    tempBoard->doMove(toMove, self);
-
+/*
+ * Scores a given move on the current board using the heuristic.
+ */
+int Player::heuristicScore(Board *tempBoard) {
+    // Do given move on a board copy.
     int boardScore = 0;
 
+    // Iterate over all cells.
     for(int x = 0; x < 8; x++) {
         for(int y = 0; y < 8; y++) {
-            // Add score of AI cells
+            // Add score if AI occupies cell.
             boardScore += tempBoard->get(self, x, y) * heuristic[y][x];
-            // Subtract scores of opponent cells
+            // Subtract score if opponent occupies cell.
             boardScore -= tempBoard->get((Side) !self, x, y) * heuristic[y][x];
         }
     }
 
-    delete tempBoard;
     return boardScore;
 }
 
-int Player::minimaxScore(Board *tempBoard, int curLayer) {
+Move *Player::heuristicMove(Board *tempBoard) {
+    Move *bestMove = NULL;
+    int bestScore = BAD_SCORE; // Initialize to unachievably bad score.
+
+    // Iterate over all possible moves.
+    for(int x = 0; x < 8; x++) {
+        for(int y = 0; y < 8; y++) {
+            Move *m = new Move(x, y);
+
+            if(board.checkMove(m, self)) {
+                // Do move m on a board copy.
+                Board *tempBoard = board.copy();
+                tempBoard->doMove(m, self);
+                // Score the resulting board.
+                int curScore = heuristicScore(tempBoard);
+
+                if (curScore > bestScore) {
+                    delete bestMove;
+                    bestMove = m;
+                    bestScore = curScore;
+                } else {
+                    delete m;
+                }
+
+                delete tempBoard;
+            } else {
+                delete m;
+            }
+        }
+    }
+
+    return bestMove;
+}
+
+/*
+ * Scores a given move on the current board using minimax.
+ */
+int Player::minimaxScore(Board *tempBoard, int curLayer, Side side) {
+    // At the leaves of the minimax tree, return the board score.
     if (curLayer == 0) {
         int boardScore = 0;
 
         for(int x = 0; x < 8; x++) {
             for(int y = 0; y < 8; y++) {
-                // Add AI cells, subtract opponent cells
+                // Add AI cells, subtract opponent cells.
                 boardScore += tempBoard->get(self, x, y)
                               - tempBoard->get((Side) !self, x, y);
             }
         }
-    } else {
-        Move *bestMove = NULL;
-        // Initialize to unachievably bad score
-        int bestScore = -1000;
 
+        // Prints flipped board for debugging purposes.
+
+        /*
+        for(int x = 0; x < 8; x++) {
+            for(int y = 0; y < 8; y++) {
+                if (tempBoard->get((Side) !self, x, y) == 1)
+                    cerr << 2;
+                else if (tempBoard->get(self, x, y) == 1)
+                    cerr << 1;
+                else
+                    cerr << 0;
+            }
+            cerr << endl;
+        }
+        cerr << endl;
+        */
+
+        return boardScore;
+    } else {
+        // If the opponent is the current player at the node, take the minimum
+        // score of the child nodes; otherwise, take the maximum score.
+
+        int bestScore = BAD_SCORE; // Initialize to unachievably bad score.
+
+        // Iterate over all possible moves.
         for(int x = 0; x < 8; x++) {
             for(int y = 0; y < 8; y++) {
                 Move *m = new Move(x, y);
 
-                Board *tempTempBoard = tempBoard.copy();
+                if(tempBoard->checkMove(m, side)) {
+                    // Do move m on a board copy.
+                    Board *tempBoard2 = tempBoard->copy();
+                    tempBoard2->doMove(m, side);
+                    // Score the resulting board.
+                    int curScore = minimaxScore(tempBoard2, curLayer - 1,
+                                                (Side) !side);
 
-                if(board.checkMove(m, self)) {
-                    tempTempBoard->doMove(m, self);
-                    int curScore = moveScore(m);
-
-                    if (curScore > bestScore) {
-                        delete bestMove;
-                        bestMove = m;
+                    if (bestScore == BAD_SCORE) {
                         bestScore = curScore;
-                    } else {
-                        delete m;
                     }
+
+                    // Checks either that it is the opponent's turn and the
+                    // current score is less than the minimum score, or that
+                    // it is the AI's turn and the current score is greater
+                    // than the maximum score.
+                    if ((bestScore == BAD_SCORE)
+                        || (side != self && curScore < bestScore)
+                        || (side == self && curScore > bestScore)) {
+                        bestScore = curScore;
+                    }
+
+                    delete tempBoard2;
+                }
+
+                delete m;
+            }
+        }
+
+        return bestScore;        
+    }
+
+}
+
+/*
+ * Finds the best move on the current board using minimax.
+ */
+Move *Player::minimax(Board *tempBoard, int numLayers) {
+    Move *bestMove = NULL;
+    int bestScore = BAD_SCORE; // Initialize to unachievably bad score.
+
+    // Iterate over all possible moves.
+    for(int x = 0; x < 8; x++) {
+        for(int y = 0; y < 8; y++) {
+            Move *m = new Move(x, y);
+
+            if(tempBoard->checkMove(m, self)) {
+                // Do move m on a board copy if it is a valid move.
+                Board *tempBoard2 = tempBoard->copy();
+                tempBoard2->doMove(m, self);
+                // Score the resulting board.
+                int curScore = minimaxScore(tempBoard2, numLayers - 1,
+                                            (Side) !self);
+
+                if (curScore > bestScore) {
+                    // If the current score is greater than the best score so
+                    // far, set the best move to move m.
+                    delete bestMove;
+                    bestMove = m;
+                    bestScore = curScore;
                 } else {
                     delete m;
                 }
+
+                delete tempBoard2;
+            } else {
+                delete m;
             }
         }
     }
 
-    delete tempBoard;
-    return boardScore;
+    return bestMove;
 }
 
 /*
@@ -112,49 +233,22 @@ int Player::minimaxScore(Board *tempBoard, int curLayer) {
  * return NULL.
  */
 Move *Player::doMove(Move *opponentsMove, int msLeft) {
-    // Do opponents move to update our local version
+    // Update local board with opponent's move
     board.doMove(opponentsMove, (Side) !self);
 
     Move *bestMove = NULL;
-    // Initialize to unachievably bad score
-    int bestScore = -1000;
-
-    // This section is used if we are dealing with a simple heuristic method
-    // without minimax.
-
-    // // Loop through all available spaces and check if there is a move.
-    // // If there is a valid move, do it immediately bc we're making a stupid AI
-    // for(int x = 0; x < 8; x++) {
-    //     for(int y = 0; y < 8; y++) {
-    //         Move *m = new Move(x, y);
-
-    //         if(board.checkMove(m, self)) {
-
-    //             // int curScore = moveScore(m);
-
-
-    //             if (curScore > bestScore) {
-    //                 delete bestMove;
-    //                 bestMove = m;
-    //                 bestScore = curScore;
-    //             } else {
-    //                 delete m;
-    //             }
-    //         } else {
-    //             delete m;
-    //         }
-    //     }
-    // }
-
-    // Begin minimax section
     Board *tempBoard = board.copy();
 
+    // Using the below line instead of the if/else clause allows doMove to use
+    // heuristic scoring instead of minimax.
+
+    // bestMove = heuristicMove(tempBoard);
+
     if(testingMinimax) {
-        Move *bestMove = minimax(tempBoard, 1);
+        bestMove = minimax(tempBoard, 2);
     } else {
-        Move *bestMove = minimax(tempBoard, 3);
+        bestMove = minimax(tempBoard, 4);
     }
-    // End minimax section
 
     board.doMove(bestMove, self);
     return bestMove;

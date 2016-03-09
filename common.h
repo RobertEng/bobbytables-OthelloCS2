@@ -6,7 +6,7 @@ enum Side {
 };
 
 class Move {
-   
+
 public:
     int x, y;
     Move(int x, int y) {

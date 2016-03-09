@@ -10,10 +10,13 @@ class Player {
 
 public:
     Player(Side side);
+    Player(Side side, Board board);
     ~Player();
 
-    int moveScore(Move *toMove);
-    Move minimaxScore(Board *tempBoard, int curLayer);
+    int heuristicScore(Board *tempBoard);
+    Move *heuristicMove(Board *tempBoard);
+    int minimaxScore(Board *tempBoard, int curLayer, Side side);
+    Move *minimax(Board *tempBoard, int numLayers);
     Move *doMove(Move *opponentsMove, int msLeft);
 
     // Flag to tell if the player is running within the test_minimax context
