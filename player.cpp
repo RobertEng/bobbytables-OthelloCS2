@@ -200,7 +200,7 @@ Move *Player::minimax(Board *tempBoard, int numLayers) {
                 int curScore = minimaxScore(tempBoard2, numLayers - 1,
                                             (Side) !self);
 
-                if (curScore > bestScore) {
+                if (bestScore == BAD_SCORE || curScore > bestScore) {
                     // If the current score is greater than the best score so
                     // far, set the best move to move m.
                     delete bestMove;
