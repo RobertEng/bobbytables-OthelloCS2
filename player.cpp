@@ -220,6 +220,14 @@ Move *Player::minimax(Board *tempBoard, int numLayers) {
     return bestMove;
 }
 
+Move * alphabeta(Board *tempBoard) {
+    Move *bestMove = NULL;
+
+    return bestMove;
+}
+
+
+
 /*
  * Compute the next move given the opponent's last move. Your AI is
  * expected to keep track of the board on its own. If this is the first move,
@@ -241,14 +249,16 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
 
     // Using the below line instead of the if/else clause allows doMove to use
     // heuristic scoring instead of minimax.
-
     // bestMove = heuristicMove(tempBoard);
 
-    if(testingMinimax) {
-        bestMove = minimax(tempBoard, 2);
-    } else {
-        bestMove = minimax(tempBoard, 4);
-    }
+    // Using the below lines is minimax junk
+    // if(testingMinimax) {
+    //     bestMove = minimax(tempBoard, 2);
+    // } else {
+    //     bestMove = minimax(tempBoard, 4);
+    // }
+
+    bestMove = alphabeta(tempBoard);
 
     board.doMove(bestMove, self);
     return bestMove;
