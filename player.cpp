@@ -271,8 +271,6 @@ int Player::alphabetaScore(Board *tempBoard, int curLayer, Side side,
                         alpha = curScore;
                         bestMove->setX(m->getX());
                         bestMove->setY(m->getY());
-                    } else {
-                        delete m;
                     }
                     if(curScore >= beta) {
                         cerr << "cutoff" << endl;                    
@@ -281,11 +279,8 @@ int Player::alphabetaScore(Board *tempBoard, int curLayer, Side side,
 
                     cerr << "tempbouard" << endl;
                     delete tempBoard2;
-                } else {
-                    cerr << "m" << endl;
-                    delete m;
-                    cerr << "mafter" << endl;
                 }
+                delete m;
                     cerr << "1s" << endl;
             }
                     cerr << "2s" << endl;
