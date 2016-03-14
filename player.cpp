@@ -5,6 +5,7 @@
 
 #include "player.h"
 #define BAD_SCORE -1000
+#define GREAT_SCORE 1000
 #include <iostream>
 using namespace std;
 
@@ -220,8 +221,121 @@ Move *Player::minimax(Board *tempBoard, int numLayers) {
     return bestMove;
 }
 
-Move * alphabeta(Board *tempBoard) {
-    Move *bestMove = NULL;
+
+/*
+ * Scores a given move on the current board using alphabeta.
+ * params m is meant to be set to return it back to the caller
+ */
+int Player::alphabetaScore(Board *tempBoard, int curLayer, Side side, 
+                                    Move *bestMove, int alpha, int beta) {
+    cerr << "alphabetascore" << endl;
+    // At the leaves of the minimax tree, return the board score.
+    if (curLayer == 0) {
+        cerr << "Base case" << endl;
+        int boardScore = 0;
+
+        for(int x = 0; x < 8; x++) {
+            for(int y = 0; y < 8; y++) {
+                // Add AI cells, subtract opponent cells.
+                boardScore += tempBoard->get(self, x, y)
+                              - tempBoard->get((Side) !self, x, y);
+            }
+        }
+        return boardScore;
+    } else {
+        // If the opponent is the current player at the node, take the minimum
+        // score of the child nodes; otherwise, take the maximum score.
+
+        // int bestScore = BAD_SCORE; // Initialize to unachievably bad score.
+
+        // Iterate over all possible moves.
+        for(int x = 0; x < 8; x++) {
+            for(int y = 0; y < 8; y++) {
+                Move *m = new Move(x, y);
+                if(tempBoard->checkMove(m, side)) {
+                    // Do move m on a board copy.
+                    cerr << "bestMOve = " << bestMove->x << ", " << bestMove->y << endl;
+                cerr << "yo curLayer = " << curLayer << " move = " << m->y << endl;
+                    Board *tempBoard2 = tempBoard->copy();
+                cerr << "yo curLayer = " << curLayer << " move = " << m->y << endl;
+                    tempBoard2->doMove(m, side);
+                    // Score the resulting board.
+                    cerr << "movemove" << endl;
+                    
+                    int curScore;
+                    curScore = -alphabetaScore(tempBoard2, curLayer - 1, 
+                                            (Side) !side, m, -beta, -alpha);
+
+                    if(curScore > alpha) {
+                        cerr << "new alpha" << endl;                    
+                        alpha = curScore;
+                        bestMove->setX(m->getX());
+                        bestMove->setY(m->getY());
+                    } else {
+                        delete m;
+                    }
+                    if(curScore >= beta) {
+                        cerr << "cutoff" << endl;                    
+                        return alpha;
+                    }
+
+                    cerr << "tempbouard" << endl;
+                    delete tempBoard2;
+                } else {
+                    cerr << "m" << endl;
+                    delete m;
+                    cerr << "mafter" << endl;
+                }
+                    cerr << "1s" << endl;
+            }
+                    cerr << "2s" << endl;
+        }
+                    cerr << "3s" << endl;
+    }
+    cerr << "dough" << endl;
+    return alpha;
+}
+
+/* Finds best move based on alphabeta */
+Move * Player::alphabeta(Board *tempBoard, int numLayers) {
+    Move *bestMove = new Move(-1, -1);
+    int alpha = BAD_SCORE; // Initialize to unachievably bad score.
+    int beta = GREAT_SCORE; // Initialize to great score for other player.
+
+    alphabetaScore(tempBoard, numLayers, self, bestMove, alpha, beta);
+
+    // // Iterate over all possible moves.
+    // for(int x = 0; x < 8; x++) {
+    //     for(int y = 0; y < 8; y++) {
+    //         Move *m = new Move(x, y);
+
+    //         if(tempBoard->checkMove(m, self)) {
+    //             // Do move m on a board copy if it is a valid move.
+    //             Board *tempBoard2 = tempBoard->copy();
+    //             tempBoard2->doMove(m, self);
+    //             // Score the resulting board.
+    //             int curAlpha, curBeta;
+    //             alphabetaScore(tempBoard2, numLayers - 1,
+    //                                         (Side) !self, &curAlpha, &curBeta);
+
+    //             if (alpha == BAD_SCORE || curAlpha > alpha) {
+    //                 // If the current score is greater than the best score so
+    //                 // far, set the best move to move m.
+    //                 delete bestMove;
+    //                 bestMove = m;
+    //                 alpha = curAlpha;
+    //                 beta = curBeta;
+    //             } else {
+    //                 delete m;
+    //             }
+
+    //             delete tempBoard2;
+    //         } else {
+    //             delete m;
+    //         }
+    //     }
+    // }
+    cerr << "ok" << endl;
 
     return bestMove;
 }
@@ -258,7 +372,7 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     //     bestMove = minimax(tempBoard, 4);
     // }
 
-    bestMove = alphabeta(tempBoard);
+    bestMove = alphabeta(tempBoard, 4);
 
     board.doMove(bestMove, self);
     return bestMove;
