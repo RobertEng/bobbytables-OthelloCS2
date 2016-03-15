@@ -6,6 +6,7 @@
 #include "player.h"
 #define BAD_SCORE -1000
 #include <iostream>
+#include <fstream>
 using namespace std;
 
 /*
@@ -236,6 +237,27 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     // Update local board with opponent's move
     board.doMove(opponentsMove, (Side) !self);
 
+    // For neural network training.
+    ofstream outfile;
+    outfile.open("ml/dataset.txt", ios::app);
+
+    if (opponentsMove != NULL) {
+        for(int x = 0; x < 8; x++) {
+            for(int y = 0; y < 8; y++) {
+                if (board.get((Side) !self, x, y) == 1)
+                    outfile << 1;
+                else if (board.get(self, x, y) == 1)
+                    outfile << 2;
+                else
+                    outfile << 0;
+            }
+        }
+        outfile << " ";
+
+        outfile << opponentsMove->x << " " << opponentsMove->y << endl;
+    }
+    // End neural network portion.
+
     Move *bestMove = NULL;
     Board *tempBoard = board.copy();
 
@@ -249,6 +271,24 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     } else {
         bestMove = minimax(tempBoard, 4);
     }
+
+    // For neural network training.
+    for(int x = 0; x < 8; x++) {
+        for(int y = 0; y < 8; y++) {
+            if (board.get((Side) !self, x, y) == 1)
+                outfile << 2;
+            else if (board.get(self, x, y) == 1)
+                outfile << 1;
+            else
+                outfile << 0;
+        }
+    }
+    outfile << " ";
+
+    outfile << bestMove->x << " " << bestMove->y << endl;
+
+    outfile.close();
+    // End neural network portion.
 
     board.doMove(bestMove, self);
     return bestMove;
