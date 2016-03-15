@@ -17,6 +17,12 @@ public:
     Move *heuristicMove(Board *tempBoard);
     int minimaxScore(Board *tempBoard, int curLayer, Side side);
     Move *minimax(Board *tempBoard, int numLayers);
+    int alphabetaScore(Board *tempBoard, int curLayer, Side side, 
+                                    Move *bestMove, int alpha, int beta);
+    Move * alphabeta(Board *tempBoard, int numLayers);
+    // int alphabetaScore(Board *tempBoard, int curLayer, Side side);
+    // Move * alphabeta(Board *tempBoard, int numLayers);
+
     Move *doMove(Move *opponentsMove, int msLeft);
 
     // Flag to tell if the player is running within the test_minimax context
