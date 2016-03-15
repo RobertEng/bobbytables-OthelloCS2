@@ -2,29 +2,9 @@
 
 import sys
 import numpy as np
+from string import maketrans
 from sklearn.ensemble import RandomForestRegressor
-
-####################
-### PREPROCESSING
-####################
-
-# Load data
-data_X = np.loadtxt("dataset.txt", dtype="str", delimiter=" ", usecols=(0,))
-data_Y = np.loadtxt("dataset.txt", dtype="int", delimiter=" ", usecols=(1, 2))
-
-X = np.array([[int(cell) for cell in list(board)] for board in data_X])
-Y = np.array([8 * move[0] + move[1] for move in data_Y])
-
-# Train AI
-BobbyTables = []
-for i in range(64):
-    cell_clf = RandomForestRegressor()
-    cell_Y = np.array([1 if i == move else 0 for move in Y])
-    cell_clf.fit(X, cell_Y)
-    BobbyTables.append(cell_clf)
-
-# Debugging log
-debug = open("debug_log.txt", "w")
+import pickle
 
 ####################
 ### FUNCTIONS
@@ -33,10 +13,10 @@ debug = open("debug_log.txt", "w")
 # Board functions
 def init_board():
     board = [0] * 64
-    update(board, 3, 3, 1)
-    update(board, 4, 4, 1)
-    update(board, 3, 4, 2)
-    update(board, 4, 3, 2)
+    set(board, 3, 3, 1)
+    set(board, 4, 4, 1)
+    set(board, 3, 4, 2)
+    set(board, 4, 3, 2)
     return board
 
 def on_board(x, y):
@@ -47,50 +27,67 @@ def on_board(x, y):
 def access(board, x, y):
     return board[x * 8 + y]
 
-def update(board, x, y, side):
-    if (x, y) != -1:
-        board[x * 8 + y] = side
+def set(board, x, y, side):
+    board[x * 8 + y] = side
 
-# Move functions
-def valid_move(board, X, Y, side, opp_side):
-    for dx in range(-1, 2):
-        for dy in range (-1, 2):
-            if dx == 0 and dy == 0:
-                continue
+def update(board, X, Y, side, opp_side):
+    if (X, Y) != (-1, -1):
+        board[X * 8 + Y] = side
 
-            x = X + dx
-            y = Y + dy
+        for dx in range(-1, 2):
+            for dy in range (-1, 2):
+                if dx == 0 and dy == 0:
+                    continue
 
-            if on_board(x, y) and access(board, x, y) == opp_side:
-                x += dx
-                y += dy
+                x = X + dx
+                y = Y + dy
+
                 while on_board(x, y) and access(board, x, y) == opp_side:
                     x += dx
                     y += dy
 
                 if on_board(x, y) and access(board, x, y) == side:
-                    return True
+                    x = X + dx
+                    y = Y + dy
+
+                    while on_board(x, y) and access(board, x, y) == opp_side:
+                        set(board, x, y, side)
+                        x += dx
+                        y += dy
+
+# Move functions
+def valid_move(board, X, Y, side, opp_side):
+    if access(board, X, Y) == 0:
+        for dx in range(-1, 2):
+            for dy in range (-1, 2):
+                if dx == 0 and dy == 0:
+                    continue
+
+                x = X + dx
+                y = Y + dy
+
+                if on_board(x, y) and access(board, x, y) == opp_side:
+                    x += dx
+                    y += dy
+
+                    while on_board(x, y) and access(board, x, y) == opp_side:
+                        x += dx
+                        y += dy
+
+                    if on_board(x, y) and access(board, x, y) == side:
+                        return True
 
     return False
 
 def make_move(board, probs, side, opp_side):
     best_moves = np.argsort(probs)[::-1]
-    #print >> debug, best_moves
-    #for move in best_moves:
-    #    debug.write("%f\n" % probs[move])
-    #    debug.write("%d\n" % move)
 
-    #print >> debug, "START\n"
-    #print >> debug, probs 
-    #print >> debug, "OK\n"
-    #print >> debug, best_moves
     for move in best_moves:
         x = move / 8
         y = move % 8
         if valid_move(board, x, y, side, opp_side):
             return (x, y)
 
-    #print >> debug, "END\n"
     return (-1, -1)
 
 def ai_turn(board, ai_side):
@@ -113,33 +110,86 @@ def play(board, ai_side, opp_side):
     sys.stdout.flush()
 
     while True:
-        debug.write("OK1\n")
         if (start == True and opp_side == 1) or (start == False):
             input_move = sys.stdin.readline()
-            debug.write("OKwhatever\n")
             opp_x, opp_y = tuple([int(coord) for coord
                                   in input_move.split()][:2])
-            update(board, opp_x, opp_y, opp_side)
-        debug.write("OK2\n")
+            update(board, opp_x, opp_y, opp_side, ai_side)
 
         move_probs = [cell_clf.predict([ai_turn(board, ai_side)])[0]
                       for cell_clf in BobbyTables]
         ai_x, ai_y = make_move(board, move_probs, ai_side, opp_side)
-
-        debug.write("%d %d\n" % (ai_x, ai_y))
-
-        update(board, ai_x, ai_y, ai_side)
+        update(board, ai_x, ai_y, ai_side, opp_side)
 
         sys.stdout.write("%d %d\n" % (ai_x, ai_y))
         sys.stdout.flush()
-        debug.write("OK0\n")
 
         start = False
 
 ####################
+### PREPROCESSING
+####################
+
+data = [line.strip() for line in
+        np.loadtxt("BobbyTables_reduced.txt", dtype="str")]
+trantab = maketrans("abcdefgh", "12345678")
+data = [line.translate(trantab, '",') for line in data]
+
+def game_converter(sequence):
+    X = []
+    Y = []
+    curr_board = init_board()
+
+    for i in range(len(sequence) / 2):
+        x = int(sequence[2 * i]) - 1
+        y = int(sequence[2 * i + 1]) - 1
+
+        X.append(curr_board[:])
+        Y.append(8 * x + y)
+        
+        if i % 2 == 0:
+            update(curr_board, x, y, 2, 1)
+        else:
+            update(curr_board, x, y, 1, 2)
+
+    return X, Y
+
+X = []
+Y = []
+for sequence in data:
+    converted = game_converter(sequence)
+    X.extend(converted[0])
+    Y.extend(converted[1])
+
+# Train AI
+BobbyTables = []
+for i in range(64):
+    cell_clf = RandomForestRegressor()
+    cell_Y = np.array([1 if i == move else 0 for move in Y])
+    cell_clf.fit(X, cell_Y)
+
+    BobbyTables.append(cell_clf)
+
+####################
 ### GAMEPLAY
 ####################
-board = init_board()
-ai_side, opp_side = sides(sys.argv[1])
-play(board, ai_side, opp_side)
-debug.close()
+if __name__ == "__main__":
+    debug = open("debug_log.txt", "w")
+
+    '''
+    # Load AI
+    BobbyTables = []
+    for i in range(64):
+        clf_file = open("BobbyTables_datasets/BobbyTables%d" % i, "r")
+        cell_clf = pickle.load(clf_file)
+        clf_file.close()
+
+        BobbyTables.append(cell_clf)
+        debug.write("%d\n" % i)
+    '''
+
+    board = init_board()
+    ai_side, opp_side = sides(sys.argv[1])
+    play(board, ai_side, opp_side)
+
+    debug.close()
