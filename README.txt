@@ -21,3 +21,9 @@ Machine Learning and let BobbyTables hone what parameters he had with the
 given oponents. We just need more time to let BobbyTables to truly prosper. We
 were going to do an opening book to get him faster early game as well as a
 better heuristic which would shift from midgame to lategame.
+
+Andrew's comments: What he said.
+
+Also, the machine learning implementation was a butt because I wanted to do
+neural nets, but sklearn didn't have it, so I just ended up doing 64
+RandomForestRegressors instead.
